@@ -30,25 +30,192 @@
         </div>
         <div class="feet"></div>
       </div>
+      
+      <!-- Debug Window and Message Sender Section -->
+      <div id="debug-section">
+        <div class="debug-container">
+          <!-- Message Sender Section -->
+          <div class="message-sender">
+            <h3>Send Test Message</h3>
+            <div class="input-group">
+              <label for="amountInput">Amount (in cents):</label>
+              <input type="number" id="amountInput" placeholder="25000" min="0" step="100">
+            </div>
+            <div class="input-group">
+              <label for="currencyInput">Currency:</label>
+              <select id="currencyInput">
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+              </select>
+            </div>
+            <button id="sendMessageBtn" class="send-btn">📡 Send IoT Message</button>
+            <div id="messageStatus" class="message-status"></div>
+          </div>
+          
+          <!-- Debug Window -->
+          <div id="debug-window" class="debug-window">
+            <div class="debug-header">
+              <h3>IoT Message Log</h3>
+              <button onclick="clearLog()" class="clear-btn">Clear</button>
+            </div>
+            <div class="debug-info">
+              <div class="info-item">
+                <strong>Device ID:</strong> <span id="debug-device-id"><%= deviceId %></span>
+              </div>
+              <div class="info-item">
+                <strong>MQTT Topic:</strong> <span id="debug-mqtt-topic">smpg/devices/<%= deviceId %>/state</span>
+              </div>
+              <div class="info-item">
+                <strong>IoT Endpoint:</strong> <span id="debug-iot-endpoint">a39a46bq0blrx0-ats.iot.eu-central-1.amazonaws.com</span>
+              </div>
+            </div>
+            <div id="debug-log" class="debug-log"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const deviceId = <%- JSON.stringify(deviceId) %>;
-      const socket = io();
-      socket.emit('join-device', deviceId);
-      socket.on('device-state', (msg) => {
-        if (msg.clock) document.getElementById('clock').textContent = msg.clock;
-        if (msg.amountFormatted) document.getElementById('amount').textContent = msg.amountFormatted;
+      document.addEventListener('DOMContentLoaded', function() {
+        const deviceId = <%- JSON.stringify(deviceId) %>;
+        const socket = io();
+        socket.emit('join-device', deviceId);
+        socket.on('device-state', (msg) => {
+          if (msg.clock) document.getElementById('clock').textContent = msg.clock;
+          if (msg.amountFormatted) document.getElementById('amount').textContent = msg.amountFormatted;
+        });
+        // local clock tick every second to stay fresh between pushes
+        function updateLocalClock(){
+          const d = new Date();
+          const hh = String(d.getHours()).padStart(2,'0');
+          const mm = String(d.getMinutes()).padStart(2,'0');
+          document.getElementById('clock').textContent = `${hh}:${mm}`;
+        }
+        updateLocalClock();
+        setInterval(updateLocalClock, 1000);
+        
+        // Debug logging
+        let messageCount = 0;
+        
+        function logMessage(type, data) {
+          const timestamp = new Date().toLocaleTimeString();
+          const logEntry = document.createElement('div');
+          logEntry.className = `log-entry log-${type}`;
+          logEntry.innerHTML = `
+            <span class="log-time">${timestamp}</span>
+            <span class="log-type">${type}</span>
+            <span class="log-data">${JSON.stringify(data, null, 2)}</span>
+          `;
+          
+          const debugLog = document.getElementById('debug-log');
+          // Insert new messages at the top instead of bottom
+          debugLog.insertBefore(logEntry, debugLog.firstChild);
+          
+          messageCount++;
+        }
+        
+        function clearLog() {
+          document.getElementById('debug-log').innerHTML = '';
+          messageCount = 0;
+        }
+        
+        // Log initial state and MQTT subscription details
+        logMessage('initial', { 
+          deviceId, 
+          amount: '<%= amountFormatted %>',
+          timestamp: new Date().toISOString()
+        });
+        
+        logMessage('mqtt-subscription', {
+          topic: `smpg/devices/${deviceId}/state`,
+          pattern: 'smpg/devices/+/state',
+          endpoint: 'a39a46bq0blrx0-ats.iot.eu-central-1.amazonaws.com',
+          region: 'eu-central-1'
+        });
+        
+        // Log socket events
+        socket.on('connect', () => {
+          logMessage('socket', { status: 'connected' });
+        });
+        
+        socket.on('disconnect', () => {
+          logMessage('socket', { status: 'disconnected' });
+        });
+        
+        socket.on('error', (error) => {
+          logMessage('error', { error: error.message || error });
+        });
+        
+        // Log device state updates
+        socket.on('device-state', (msg) => {
+          logMessage('device-state', msg);
+          if (msg.clock) document.getElementById('clock').textContent = msg.clock;
+          if (msg.amountFormatted) document.getElementById('amount').textContent = msg.amountFormatted;
+        });
+        
+        // Message sender functionality
+        document.getElementById('sendMessageBtn').addEventListener('click', async () => {
+          const amountInput = document.getElementById('amountInput');
+          const currencyInput = document.getElementById('currencyInput');
+          const messageStatus = document.getElementById('messageStatus');
+          
+          const amountCents = parseInt(amountInput.value);
+          const currency = currencyInput.value;
+          
+          if (!amountCents || amountCents < 0) {
+            messageStatus.textContent = '❌ Please enter a valid amount';
+            messageStatus.className = 'message-status error';
+            return;
+          }
+          
+          try {
+            messageStatus.textContent = '📡 Sending message...';
+            messageStatus.className = 'message-status sending';
+            
+            // Log the message being sent
+            logMessage('message-sending', { 
+              amountCents, 
+              currency, 
+              timestamp: new Date().toISOString(),
+              note: 'Sending test message via API'
+            });
+            
+            const response = await fetch(`/api/${deviceId}/iot-simulate`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ amountCents, currency })
+            });
+            
+            const result = await response.json();
+            
+            if (result.ok) {
+              messageStatus.textContent = `✅ Message sent! Amount: ${(amountCents / 100).toFixed(2)} ${currency}`;
+              messageStatus.className = 'message-status success';
+              
+              // Log the sent message
+              logMessage('message-sent', { amountCents, currency, timestamp: new Date().toISOString() });
+              
+              // Clear the input
+              amountInput.value = '';
+            } else {
+              messageStatus.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+              messageStatus.className = 'message-status error';
+            }
+          } catch (error) {
+            messageStatus.textContent = `❌ Network error: ${error.message}`;
+            messageStatus.className = 'message-status error';
+          }
+          
+          // Clear status after 5 seconds
+          setTimeout(() => {
+            messageStatus.textContent = '';
+            messageStatus.className = 'message-status';
+          }, 5000);
+        });
       });
-      // local clock tick every second to stay fresh between pushes
-      function updateLocalClock(){
-        const d = new Date();
-        const hh = String(d.getHours()).padStart(2,'0');
-        const mm = String(d.getMinutes()).padStart(2,'0');
-        document.getElementById('clock').textContent = `${hh}:${mm}`;
-      }
-      updateLocalClock();
-      setInterval(updateLocalClock, 1000);
     </script>
   </body>
 </html>
