@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pig Device - <%= deviceId %></title>
+    <link rel="stylesheet" href="/static/css/pig.css" />
+  </head>
+  <body>
+    <div id="wrap">
+      <div id="pig">
+        <div class="face">
+          <div class="ear left"></div>
+          <div class="ear right"></div>
+          <div class="eyes">
+            <div class="eye"></div>
+            <div class="eye"></div>
+          </div>
+          <div class="snout">
+            <div class="nostril"></div>
+            <div class="nostril"></div>
+          </div>
+          <div class="smile"></div>
+        </div>
+        <div class="slot"></div>
+        <div class="screen">
+          <div class="clock" id="clock"><%= clock %></div>
+          <img class="qr" src="<%= qrPngDataUrl %>" alt="QR" />
+          <div class="amount" id="amount"><%= amountFormatted %></div>
+        </div>
+        <div class="feet"></div>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const deviceId = <%- JSON.stringify(deviceId) %>;
+      const socket = io();
+      socket.emit('join-device', deviceId);
+      socket.on('device-state', (msg) => {
+        if (msg.clock) document.getElementById('clock').textContent = msg.clock;
+        if (msg.amountFormatted) document.getElementById('amount').textContent = msg.amountFormatted;
+      });
+      // update clock every 10s
+      setInterval(() => {
+        socket.emit('join-device', deviceId);
+      }, 10000);
+    </script>
+  </body>
+</html>

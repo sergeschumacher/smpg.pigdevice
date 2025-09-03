@@ -1,0 +1,21 @@
+:root{ --bg:#f6f6f6; --pig:#ffffff; --shadow:rgba(0,0,0,.08); --ink:#262626; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--ink); }
+#wrap{ min-height:100dvh; display:grid; place-items:center; padding:24px; }
+#pig{ position:relative; width:min(320px,90vw); aspect-ratio:1/1; border-radius:50%; background:var(--pig); box-shadow:0 20px 50px var(--shadow), inset 0 -10px 20px rgba(0,0,0,.03);
+  display:flex; align-items:center; justify-content:center; }
+.face{ position:absolute; inset:0; border-radius:50%; }
+.ear{ position:absolute; width:22%; aspect-ratio:1/1.25; background:var(--pig); top:-6%; border-radius:40% 40% 55% 55%; box-shadow:0 6px 12px var(--shadow); }
+.ear.left{ left:16%; transform:rotate(-12deg); }
+.ear.right{ right:16%; transform:rotate(12deg); }
+.eyes{ position:absolute; top:28%; left:0; right:0; display:flex; justify-content:center; gap:20%; }
+.eye{ width:7%; aspect-ratio:1/1; background:#111; border-radius:50%; box-shadow:0 1px 0 #0002 inset; }
+.snout{ position:absolute; top:38%; left:50%; transform:translateX(-50%); width:30%; aspect-ratio:1.6/1; background:#f2f2f2; border-radius:40%/55%; box-shadow:inset 0 3px 8px #0001, 0 1px 0 #fff; display:flex; align-items:center; justify-content:center; gap:14%; }
+.nostril{ width:16%; aspect-ratio:0.6/1; background:#555; border-radius:50px; }
+.smile{ position:absolute; top:48%; left:50%; transform:translateX(-50%); width:44%; height:20%; border-bottom:3px solid #cfcfcf; border-radius:0 0 120px 120px; }
+.slot{ position:absolute; width:26%; height:6px; background:#444; top:-2%; left:37%; border-radius:10px; }
+.screen{ position:absolute; bottom:16%; left:50%; transform:translateX(-50%); width:64%; aspect-ratio:1/1; background:#e9ecef; border-radius:14px; box-shadow:inset 0 0 0 2px #d5d9de, inset 0 -6px 12px #0001; display:grid; grid-template-rows:auto 1fr auto; align-items:center; justify-items:center; padding:10px; }
+.clock{ font-size:clamp(20px,5vw,28px); font-weight:800; letter-spacing:.5px; }
+.qr{ width:74%; height:auto; image-rendering:pixelated; }
+.amount{ font-size:clamp(22px,6vw,32px); font-weight:900; }
+.feet{ position:absolute; bottom:-2%; left:14%; right:14%; height:10%; border-radius:0 0 40% 40%; box-shadow:0 -10px 15px var(--shadow) inset; }

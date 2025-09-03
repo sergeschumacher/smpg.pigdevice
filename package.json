@@ -1,0 +1,22 @@
+{
+  "name": "smpg.pigdevice",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --watch src --ext js,mjs,ts,json,ejs --exec node src/server.mjs",
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "aws-iot-device-sdk-v2": "^1.17.3",
+    "dayjs": "^1.11.11",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
