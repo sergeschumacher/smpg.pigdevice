@@ -40,10 +40,15 @@
         if (msg.clock) document.getElementById('clock').textContent = msg.clock;
         if (msg.amountFormatted) document.getElementById('amount').textContent = msg.amountFormatted;
       });
-      // update clock every 10s
-      setInterval(() => {
-        socket.emit('join-device', deviceId);
-      }, 10000);
+      // local clock tick every second to stay fresh between pushes
+      function updateLocalClock(){
+        const d = new Date();
+        const hh = String(d.getHours()).padStart(2,'0');
+        const mm = String(d.getMinutes()).padStart(2,'0');
+        document.getElementById('clock').textContent = `${hh}:${mm}`;
+      }
+      updateLocalClock();
+      setInterval(updateLocalClock, 1000);
     </script>
   </body>
 </html>
