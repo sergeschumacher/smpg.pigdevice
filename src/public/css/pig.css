@@ -315,3 +315,13 @@ body{ margin:0; background:var(--bg); font-family:ui-sans-serif, system-ui, -app
   border-left-color: #dc3545;
   color: #721c24;
 }
+
+/* MQTT Button Styling */
+.mqtt-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  margin-top: 10px;
+}
+
+.mqtt-btn:hover {
+  box-shadow: 0 6px 12px rgba(40,167,69,0.3);
+}

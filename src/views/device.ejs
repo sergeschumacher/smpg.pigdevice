@@ -49,8 +49,9 @@
                 <option value="GBP">GBP</option>
               </select>
             </div>
-            <button id="sendMessageBtn" class="send-btn">📡 Send IoT Message</button>
-            <div id="messageStatus" class="message-status"></div>
+                    <button id="sendMessageBtn" class="send-btn">📡 Send Test Message</button>
+        <button id="sendMqttBtn" class="send-btn mqtt-btn">🚀 Send MQTT to AWS</button>
+        <div id="messageStatus" class="message-status"></div>
           </div>
           
           <!-- Debug Window -->
@@ -207,6 +208,102 @@
           } catch (error) {
             messageStatus.textContent = `❌ Network error: ${error.message}`;
             messageStatus.className = 'message-status error';
+          }
+          
+          // Clear status after 5 seconds
+          setTimeout(() => {
+            messageStatus.textContent = '';
+            messageStatus.className = 'message-status';
+          }, 5000);
+        });
+
+        // MQTT sending functionality
+        document.getElementById('sendMqttBtn').addEventListener('click', async () => {
+          const amountInput = document.getElementById('amountInput');
+          const currencyInput = document.getElementById('currencyInput');
+          const messageStatus = document.getElementById('messageStatus');
+          
+          const amountCents = parseInt(amountInput.value);
+          const currency = currencyInput.value;
+          
+          if (!amountCents || amountCents < 0) {
+            messageStatus.textContent = '❌ Please enter a valid amount';
+            messageStatus.className = 'message-status error';
+            return;
+          }
+          
+          try {
+            messageStatus.textContent = '🚀 Sending MQTT message to AWS...';
+            messageStatus.className = 'message-status sending';
+            
+            // Log the MQTT message being sent
+            logMessage('mqtt-sending', { 
+              amountCents, 
+              currency, 
+              timestamp: new Date().toISOString(),
+              note: 'Sending MQTT message to AWS IoT'
+            });
+            
+            const mqttPayload = {
+              amountCents,
+              currency,
+              timestamp: new Date().toISOString(),
+              deviceId: deviceId,
+              source: 'pigdevice-web'
+            };
+            
+            const response = await fetch(`/api/${deviceId}/mqtt-publish`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                topic: `smpg/devices/${deviceId}/state`,
+                payload: mqttPayload
+              })
+            });
+            
+            const result = await response.json();
+            
+            if (result.ok) {
+              messageStatus.textContent = `✅ MQTT message sent to AWS! Amount: ${(amountCents / 100).toFixed(2)} ${currency}`;
+              messageStatus.className = 'message-status success';
+              
+              // Log the successful MQTT message
+              logMessage('mqtt-sent', { 
+                amountCents, 
+                currency, 
+                timestamp: new Date().toISOString(),
+                topic: `smpg/devices/${deviceId}/state`,
+                note: 'MQTT message sent successfully to AWS IoT'
+              });
+              
+              // Clear the input
+              amountInput.value = '';
+            } else {
+              messageStatus.textContent = `❌ MQTT Error: ${result.error || 'Unknown error'}`;
+              messageStatus.className = 'message-status error';
+              
+              // Log the MQTT error
+              logMessage('mqtt-error', { 
+                amountCents, 
+                currency, 
+                timestamp: new Date().toISOString(),
+                error: result.error || 'Unknown error'
+              });
+            }
+          } catch (error) {
+            messageStatus.textContent = `❌ Network error: ${error.message}`;
+            messageStatus.className = 'message-status error';
+            
+            // Log the network error
+            logMessage('mqtt-error', { 
+              amountCents, 
+              currency, 
+              timestamp: new Date().toISOString(),
+              error: error.message,
+              type: 'network-error'
+            });
           }
           
           // Clear status after 5 seconds
